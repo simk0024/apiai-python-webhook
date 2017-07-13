@@ -35,7 +35,7 @@ def processRequest(req):
     owm_query = makeOwmQuery(req)
     if owm_query is None:
         return {}
-    owm_url = baseurl + owm_query
+    owm_url = baseurl + owm_query + "&APPID=f111102076d1eba55c555133233e0308"
     print(owm_url)
 
     result = urllib.urlopen(owm_url).read()
@@ -82,8 +82,8 @@ def makeWebhookResult(data):
 
     # print(json.dumps(item, indent=4))
 
-    speech = "Currently in " + location + ", it is " + temp + " degree with " + description + ". " +
-             "Today, you can expect the highest "+ temp_max + " degree and the lowest " + temp_min + " degree." 
+    speech = "Currently in " + location + ", it is " + temp + " degree with " + description + ". " + "Today, you can expect the highest "+ temp_max + " degree and the lowest " + temp_min + " degree." 
+
 ##  "Tomorrow in Sg, you will see {}, and can expect the highest {} degree 
 ##  and lowest {} degree."
 
