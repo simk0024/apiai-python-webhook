@@ -31,7 +31,7 @@ def webhook():
 def processRequest(req):
     if req.get("result").get("action") != "owmWeatherForecast":
         return {}
-    baseurl = "https://api.openweathermap.org/data/2.5/"
+    baseurl = "http://api.openweathermap.org/data/2.5/"
     owm_query = makeOwmQuery(req)
     if owm_query is None:
         return {}
