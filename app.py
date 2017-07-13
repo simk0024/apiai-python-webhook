@@ -74,18 +74,17 @@ def makeWebhookResult(data):
     if main is None:
         return {}
 
-    temp_min = main.get('temp_min')
-    temp_max = main.get('temp_max')
-    temp = main.get('temp')
+    temp_min = main.get('temp_min') - 273.15
+    temp_max = main.get('temp_max') - 273.15
+    temp = main.get('temp') - 273.15
     description = weather[0].get('description')
     location = data.get('name')
 
     # print(json.dumps(item, indent=4))
 
-    speech = "Currently in " + location + ", it is " + temp + " degree with " + description + ". " + "Today, you can expect the highest "+ temp_max + " degree and the lowest " + temp_min + " degree." 
+    speech = "Currently in " + location + ", it is " + str(temp) + " degree with " + description + ". " + "Today, you can expect the highest "+ str(temp_max) + " degree and the lowest " + str(temp_min) + " degree." 
 
-##  "Tomorrow in Sg, you will see {}, and can expect the highest {} degree 
-##  and lowest {} degree."
+##  "Tomorrow in Sg, you will see {}, and can expect the highest {} degree and lowest {} degree."
 
     print("Response:")
     print(speech)
