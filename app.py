@@ -29,17 +29,17 @@ def webhook():
 
 
 def processRequest(req):
-    if req.get("result").get("action") != "yahooWeatherForecast":
+    if req.get("result").get("action") != "owmWeatherForecast":
         return {}
-    baseurl = "https://query.yahooapis.com/v1/public/yql?"
-    yql_query = makeYqlQuery(req)
-    if yql_query is None:
+    baseurl = "https://api.openweathermap.org/data/2.5/"
+    owm_query = makeOwmQuery(req)
+    if owm_query is None:
         return {}
-    yql_url = baseurl + urllib.urlencode({'q': yql_query}) + "&format=json"
-    print(yql_url)
+    owm_url = baseurl + owm_query
+    print(owm_url)
 
-    result = urllib.urlopen(yql_url).read()
-    print("yql result: ")
+    result = urllib.urlopen(owm_url).read()
+    print("owm result: ")
     print(result)
 
     data = json.loads(result)
@@ -47,110 +47,112 @@ def processRequest(req):
     return res
 
 
-def makeYqlQuery(req):
+def makeOwmQuery(req):
     result = req.get("result")
     parameters = result.get("parameters")
+    country = parameters.get("geo-country")
     city = parameters.get("geo-city")
-    if city is None:
-        return None
+    date = parameters.get("date")
 
-    return "select * from weather.forecast where woeid in (select woeid from geo.places(1) where text='" + city + "')"
+    if city is not None:
+        location = city
+    elif country is not None:
+        location = country
+    else:
+        return None       
+
+    #TODO: forecast-->forecast?q={city name}
+    return "weather?q=" + location
 
 
 def makeWebhookResult(data):
-    query = data.get('query')
-    if query is None:
+    weather = data.get('weather')
+    if weather is None:
         return {}
 
-    result = query.get('results')
-    if result is None:
+    main = data.get('main')
+    if main is None:
         return {}
 
-    channel = result.get('channel')
-    if channel is None:
-        return {}
-
-    item = channel.get('item')
-    location = channel.get('location')
-    units = channel.get('units')
-    if (location is None) or (item is None) or (units is None):
-        return {}
-
-    condition = item.get('condition')
-    if condition is None:
-        return {}
+    temp_min = main.get('temp_min')
+    temp_max = main.get('temp_max')
+    temp = main.get('temp')
+    description = weather[0].get('description')
+    location = data.get('name')
 
     # print(json.dumps(item, indent=4))
 
-    speech = "Today in " + location.get('city') + ": " + condition.get('text') + \
-             ", the temperature is " + condition.get('temp') + " " + units.get('temperature')
+    speech = "Currently in " + location + ", it is " + temp + " degree with " + description + ". " +
+             "Today, you can expect the highest "+ temp_max + " degree and the lowest " + temp_min + " degree." 
+##  "Tomorrow in Sg, you will see {}, and can expect the highest {} degree 
+##  and lowest {} degree."
 
     print("Response:")
     print(speech)
 
-    slack_message = {
-        "text": speech,
-        "attachments": [
-            {
-                "title": channel.get('title'),
-                "title_link": channel.get('link'),
-                "color": "#36a64f",
-
-                "fields": [
-                    {
-                        "title": "Condition",
-                        "value": "Temp " + condition.get('temp') +
-                                 " " + units.get('temperature'),
-                        "short": "false"
-                    },
-                    {
-                        "title": "Wind",
-                        "value": "Speed: " + channel.get('wind').get('speed') +
-                                 ", direction: " + channel.get('wind').get('direction'),
-                        "short": "true"
-                    },
-                    {
-                        "title": "Atmosphere",
-                        "value": "Humidity " + channel.get('atmosphere').get('humidity') +
-                                 " pressure " + channel.get('atmosphere').get('pressure'),
-                        "short": "true"
-                    }
-                ],
-
-                "thumb_url": "http://l.yimg.com/a/i/us/we/52/" + condition.get('code') + ".gif"
-            }
-        ]
-    }
-
-    facebook_message = {
-        "attachment": {
-            "type": "template",
-            "payload": {
-                "template_type": "generic",
-                "elements": [
-                    {
-                        "title": channel.get('title'),
-                        "image_url": "http://l.yimg.com/a/i/us/we/52/" + condition.get('code') + ".gif",
-                        "subtitle": speech,
-                        "buttons": [
-                            {
-                                "type": "web_url",
-                                "url": channel.get('link'),
-                                "title": "View Details"
-                            }
-                        ]
-                    }
-                ]
-            }
-        }
-    }
-
-    print(json.dumps(slack_message))
+##    slack_message = {
+##        "text": speech,
+##        "attachments": [
+##            {
+##                "title": channel.get('title'),
+##                "title_link": channel.get('link'),
+##                "color": "#36a64f",
+##
+##                "fields": [
+##                    {
+##                        "title": "Condition",
+##                        "value": "Temp " + condition.get('temp') +
+##                                 " " + units.get('temperature'),
+##                        "short": "false"
+##                    },
+##                    {
+##                        "title": "Wind",
+##                        "value": "Speed: " + channel.get('wind').get('speed') +
+##                                 ", direction: " + channel.get('wind').get('direction'),
+##                        "short": "true"
+##                    },
+##                    {
+##                        "title": "Atmosphere",
+##                        "value": "Humidity " + channel.get('atmosphere').get('humidity') +
+##                                 " pressure " + channel.get('atmosphere').get('pressure'),
+##                        "short": "true"
+##                    }
+##                ],
+##
+##                "thumb_url": "http://l.yimg.com/a/i/us/we/52/" + condition.get('code') + ".gif"
+##            }
+##        ]
+##    }
+##
+##    facebook_message = {
+##        "attachment": {
+##            "type": "template",
+##            "payload": {
+##                "template_type": "generic",
+##                "elements": [
+##                    {
+##                        "title": channel.get('title'),
+##                        "image_url": "http://l.yimg.com/a/i/us/we/52/" + condition.get('code') + ".gif",
+##                        "subtitle": speech,
+##                        "buttons": [
+##                            {
+##                                "type": "web_url",
+##                                "url": channel.get('link'),
+##                                "title": "View Details"
+##                            }
+##                        ]
+##                    }
+##                ]
+##            }
+##        }
+##    }
+##
+##    print(json.dumps(slack_message))
 
     return {
         "speech": speech,
         "displayText": speech,
-        "data": {"slack": slack_message, "facebook": facebook_message},
+        #"data": {"slack": slack_message, "facebook": facebook_message},
         # "contextOut": [],
         "source": "apiai-weather-webhook-sample"
     }
